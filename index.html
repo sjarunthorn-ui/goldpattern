@@ -68,6 +68,19 @@
     .btn.primary{background:var(--gold);color:#1a1200;border-color:var(--gold);font-weight:700}
     .btn:disabled{opacity:.4;cursor:not-allowed}
     @media(max-width:720px){body{padding:9px}.card{padding:12px}.signal-layout{grid-template-columns:1fr}.rules{grid-template-columns:1fr}.indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#chart{height:260px}}
+  
+    .log-wrap{overflow-x:auto;margin-top:10px}
+    .log-table{width:100%;border-collapse:collapse;min-width:760px;font-size:12px}
+    .log-table th,.log-table td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+    .log-table th{color:var(--mute);font-weight:600;background:#111629}
+    .log-table th:first-child,.log-table td:first-child,.log-table th:nth-child(2),.log-table td:nth-child(2){text-align:left}
+    .log-table tr:hover td{background:rgba(255,255,255,.025)}
+    .log-signal{font-weight:800}
+    .log-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+    .log-summary .kv .v{font-size:21px}
+    .log-empty{text-align:center!important;color:var(--mute);padding:22px!important}
+    .log-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
   </style>
 </head>
 <body>
@@ -81,7 +94,6 @@
       <div class="status"><span class="dot" id="dot"></span><span id="statusText">กำลังเชื่อมต่อข้อมูล…</span></div>
     </div>
   </section>
-
   <section class="card">
     <div class="sub">ราคาอ้างอิงทองคำแท่ง 1 บาท</div>
     <div class="price-row">
@@ -98,7 +110,6 @@
     <div id="chart"></div>
     <div class="sub" style="margin-top:7px">กราฟนี้แสดงราคาอ้างอิงทองคำไทยที่คำนวณได้ ไม่ใช่ราคาประกาศซื้อขายจริงของร้านทอง</div>
   </section>
-
   <section class="card">
     <div class="grid">
       <div class="kv"><div class="k">Gold Spot (USD/oz)</div><div class="v" id="kvSpot">—</div><div class="n">แหล่งข้อมูล: gold-api.com</div></div>
@@ -108,7 +119,6 @@
     </div>
     <div class="formula" id="formula">สูตร: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035</div>
   </section>
-
   <section class="card">
     <div class="section-title">
       <h2>🤖 AI + Indicators Decision Engine</h2>
@@ -153,7 +163,6 @@
     </div>
     <div class="sub" style="margin-top:12px">กฎทดลอง: SELL = EMA50 &lt; EMA200 + ราคาปิดหลุดแนวรับตาม ATR + โมเมนตัมขาลง · TAKE_PROFIT = ปิดเหนือแนวต้านตาม ATR + RSI/MACD ฟื้นตัว (ขายทำกำไร) · เงื่อนไขไม่ครบให้ NO_TRADE</div>
   </section>
-
   <section class="card">
     <div class="section-title"><h2>เกณฑ์ตัดสินใจ</h2><span class="tag">Rules-based · เวอร์ชันทดสอบ</span></div>
     <div class="rules">
@@ -171,6 +180,29 @@
       </div>
     </div>
   </section>
+  <section class="card" id="signalHistoryCard">
+    <div class="section-title">
+      <h2>📋 SIGNAL HISTORY LOG</h2>
+      <span class="tag" id="logCount">0 รายการ</span>
+    </div>
+    <div class="sub">บันทึกเมื่อมีสัญญาณใหม่ในแท่งเวลาที่ปิดแล้ว · P/L ต่อเหตุการณ์คำนวณจากการเปลี่ยนแปลงของราคาอ้างอิงเทียบกับสัญญาณก่อนหน้า (รายการแรกเทียบต้นทุน)</div>
+    <div class="log-wrap">
+      <table class="log-table">
+        <thead><tr><th>วัน / เวลา</th><th>สัญญาณ</th><th>ราคา (บาท)</th><th>เปลี่ยนแปลง P/L (บาท)</th><th>P/L สะสม (บาท)</th><th>เหตุผล</th></tr></thead>
+        <tbody id="signalLogBody"><tr><td colspan="6" class="log-empty">ยังไม่มีประวัติสัญญาณ</td></tr></tbody>
+      </table>
+    </div>
+    <div class="log-summary">
+      <div class="kv"><div class="k">กำไร/ขาดทุนสุทธิสะสม</div><div class="v" id="logNetPnl">—</div><div class="n">รวมผลต่างจากทุกรายการใน Log</div></div>
+      <div class="kv"><div class="k">กำไรรวม</div><div class="v up" id="logProfit">0.00 บาท</div><div class="n">เฉพาะเหตุการณ์ที่เป็นบวก</div></div>
+      <div class="kv"><div class="k">ขาดทุนรวม</div><div class="v down" id="logLoss">0.00 บาท</div><div class="n">เฉพาะเหตุการณ์ที่เป็นลบ</div></div>
+    </div>
+    <div class="log-actions">
+      <button class="btn" id="exportSignalLog">ส่งออก Signal Log CSV</button>
+      <button class="btn" id="clearSignalLog">ล้างประวัติ Signal Log</button>
+    </div>
+    <div class="foot" style="margin-top:9px">หมายเหตุ: เป็นผลต่างราคาอ้างอิงจำลองต่อทองคำ 1 บาท ไม่ใช่กำไร/ขาดทุนที่รับเงินจริง และยังไม่หักส่วนต่างราคารับซื้อ-ขายออก</div>
+  </section>
 
   <section class="card">
     <div class="section-title"><h2>ตั้งค่าราคาและข้อมูล</h2></div>
@@ -185,7 +217,6 @@
     <div class="foot" style="margin-top:12px">สูตรอ้างอิง: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035 · ราคานี้ไม่ใช่ราคาซื้อขายจริงของร้านทอง และไม่รวมส่วนต่างรับซื้อ/ขายออก</div>
   </section>
 </div>
-
 <script>
 (() => {
   'use strict';
@@ -193,7 +224,7 @@
   const calc=(spot,fx)=>spot*fx*GRAMS_PER_BAHT*PURITY/GRAMS_PER_OZ;
   const POLL_MS=5000, FX_EVERY_MS=60000, KEEP_SEC=24*3600, MAX_POINTS=6000;
   const $=id=>document.getElementById(id);
-  const KEY={hist:'gold_baht_hist_v2',fx:'gold_baht_fx_manual_v2',cost:'gold_baht_cost_v2',candles:'gold_spot_synthetic_candles_v1'};
+  const KEY={hist:'gold_baht_hist_v2',fx:'gold_baht_fx_manual_v2',cost:'gold_baht_cost_v2',candles:'gold_spot_synthetic_candles_v1',signalLog:'gold_signal_history_v1'};
   const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
   const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
   const nf0=new Intl.NumberFormat('th-TH',{maximumFractionDigits:0});
@@ -204,9 +235,10 @@
   let fxManual=load(KEY.fx,null),cost=load(KEY.cost,null);
   let hist=(load(KEY.hist,[])||[]).filter(p=>Array.isArray(p)&&isFinite(p[0])&&isFinite(p[1])&&p[0]>nowSec()-KEEP_SEC);
   let candles=(load(KEY.candles,[])||[]).filter(c=>c&&Number.isFinite(c.time)&&Number.isFinite(c.close)&&c.time>nowSec()-KEEP_SEC);
+  let signalLog=(load(KEY.signalLog,[])||[]).filter(x=>x&&Number.isFinite(x.time)&&Number.isFinite(x.price)&&Number.isFinite(x.delta));
+  let lastLogKey='';
   let tick=0, chart=null,series=null,costLine=null;
   if(fxManual)$('fxManual').value=fxManual;if(cost)$('cost').value=cost;
-
   const tzShift=-new Date().getTimezoneOffset()*60,disp=t=>t+tzShift;
   if(window.LightweightCharts){
     chart=LightweightCharts.createChart($('chart'),{
@@ -218,20 +250,17 @@
     series=chart.addAreaSeries({lineColor:'#f5a30a',topColor:'rgba(245,163,10,.30)',bottomColor:'rgba(245,163,10,0)',lineWidth:2,priceFormat:{type:'price',precision:0,minMove:1}});
     series.setData(hist.map(p=>({time:disp(p[0]),value:p[1]})));chart.timeScale().fitContent();
   }else $('chart').innerHTML='<div class="sub" style="padding:40px 0;text-align:center">โหลดไลบรารีกราฟไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</div>';
-
   function updateCostLine(){if(!series)return;if(costLine){series.removePriceLine(costLine);costLine=null}if(cost>0)costLine=series.createPriceLine({price:cost,color:'#26a69a',lineStyle:2,lineWidth:1,axisLabelVisible:true,title:'ต้นทุน'});}
   updateCostLine();
-
   async function getJSON(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(url+' '+r.status);return r.json();}
-  async function fetchSpot(){const j=await getJSON('https://api.gold-api.com/price/XAU');const p=Number(j.price);if(!Number.isFinite(p)||p<=0)throw new Error('spot invalid');return p;}
+  async function fetchSpot(){const j=await getJSON('https\://api.gold-api.com/price/XAU');const p=Number(j.price);if(!Number.isFinite(p)||p<=0)throw new Error('spot invalid');return p;}
   async function fetchFx(){
-    const sources=[['open.er-api.com',async()=>(await getJSON('https://open.er-api.com/v6/latest/USD')).rates.THB],['frankfurter.app',async()=>(await getJSON('https://api.frankfurter.app/latest?from=USD&to=THB')).rates.THB]];
+    const sources=[['open.er-api.com',async()=>(await getJSON('https\://open.er-api.com/v6/latest/USD')).rates.THB],['frankfurter.app',async()=>(await getJSON('https\://api.frankfurter.app/latest?from=USD&to=THB')).rates.THB]];
     for(const [name,fn] of sources){try{const v=Number(await fn());if(Number.isFinite(v)&&v>0)return{v,name}}catch(e){}}
     throw new Error('fx unavailable');
   }
   const fxEff=()=>fxManual>0?fxManual:fxAuto;
   function setStatus(kind,text){$('dot').className='dot '+kind;$('statusText').textContent=text;}
-
   function addSpotToCandle(price,t){
     const minute=Math.floor(t/60)*60;
     const last=candles.length?candles[candles.length-1]:null;
@@ -244,7 +273,6 @@
     candles=candles.filter(c=>c.time>nowSec()-KEEP_SEC).slice(-2000);
     if(tick%6===0)save(KEY.candles,candles);
   }
-
   function aggregateCandles(minutes){
     if(minutes===1)return candles.filter(c=>c.closed);
     const closed=candles.filter(c=>c.closed),out=[];
@@ -256,14 +284,12 @@
     }
     return out;
   }
-
   function ema(values,period){
     if(values.length<period)return null;
     const k=2/(period+1);let v=values.slice(0,period).reduce((a,b)=>a+b,0)/period;
     for(let i=period;i<values.length;i++)v=values[i]*k+v*(1-k);
     return v;
   }
-
   function rsi(values,period=14){
     if(values.length<=period)return null;
     let gain=0,loss=0;
@@ -272,7 +298,6 @@
     for(let i=period+1;i<values.length;i++){const d=values[i]-values[i-1];avgG=((avgG*(period-1))+Math.max(d,0))/period;avgL=((avgL*(period-1))+Math.max(-d,0))/period}
     if(avgL===0)return 100;return 100-(100/(1+avgG/avgL));
   }
-
   function macd(values){
     if(values.length<35)return null;
     const fast=[],slow=[];
@@ -286,14 +311,12 @@
     const sig=ema(line,9);
     return {line:line[line.length-1],signal:sig};
   }
-
   function atr(cs,period=14){
     if(cs.length<period+1)return null;
     const tr=[];
     for(let i=1;i<cs.length;i++){const c=cs[i],prev=cs[i-1];tr.push(Math.max(c.high-c.low,Math.abs(c.high-prev.close),Math.abs(c.low-prev.close)))}
     return tr.slice(-period).reduce((a,b)=>a+b,0)/period;
   }
-
   function evaluate(){
     const tf=Number($('tfSelect').value),cs=aggregateCandles(tf);
     $('candleCount').textContent=String(cs.length);
@@ -308,17 +331,15 @@
     $('ema50Note').textContent=e50!==null?'คำนวณจากราคาปิด':'ต้องมีข้อมูลมากขึ้น';
     $('ema200Note').textContent=e200!==null?'คำนวณจากราคาปิด':'ต้องมีอย่างน้อย 200 แท่ง';
     $('rsiNote').textContent=rv===null?'ข้อมูลไม่พอ':rv>70?'เขตแรงซื้อสูง':rv<30?'เขตแรงขายสูง':rv>50?'โมเมนตัมบวก':'โมเมนตัมลบ';
-    
+
     const down=e50!==null&&e200!==null&&e50<e200,up=e50!==null&&e200!==null&&e50>e200;
     $('trendPill').textContent='Trend: '+(down?'DOWN':up?'UP':'UNKNOWN');
     $('trendPill').style.color=down?'#ef5350':up?'#26a69a':'#8b92b0';
-
     if(cs.length<205||!last||rv===null||!mv||av===null){
       setSignal('NO_TRADE','ข้อมูลแท่งเทียนยังไม่เพียงพอสำหรับ EMA 200 และ Indicators ทั้งชุด');
       $('support').textContent='—';$('resistance').textContent='—';$('engineStatus').textContent='กำลังสะสมข้อมูล';
       return;
     }
-
     const prior=cs.slice(-21,-1),supportLevel=Math.min(...prior.map(c=>c.low)),resistanceLevel=Math.max(...prior.map(c=>c.high));
     $('support').textContent=fmt(supportLevel);$('resistance').textContent=fmt(resistanceLevel);
     const buffer=Number($('bufferSelect').value)*av;
@@ -326,7 +347,6 @@
     const upMomentum=mv.line>mv.signal&&rv>50;
     const breakDown=last.close<supportLevel-buffer;
     const breakUp=last.close>resistanceLevel+buffer;
-
     // เงื่อนไขการตัดสินใจ (เปลี่ยน BUY_BACK เป็น TAKE_PROFIT)
     if(down&&breakDown&&downMomentum){
       setSignal('SELL',`ผ่านครบ: EMA50 < EMA200 · ปิดต่ำกว่าแนวรับ (${fmt(supportLevel)}) เกิน buffer · MACD/RSI สนับสนุนแรงขาย`);
@@ -344,12 +364,46 @@
     }
     $('engineStatus').textContent='ประเมินจากแท่งที่ปิดแล้ว';
   }
-
+  function renderSignalLog(){
+    const body=$('signalLogBody');
+    $('logCount').textContent=signalLog.length+' รายการ';
+    if(!signalLog.length){body.innerHTML='<tr><td colspan="6" class="log-empty">ยังไม่มีประวัติสัญญาณ</td></tr>';$('logNetPnl').textContent='—';$('logProfit').textContent='0.00 บาท';$('logLoss').textContent='0.00 บาท';return;}
+    let cumulative=0,profit=0,loss=0;
+    const rows=signalLog.map(item=>{
+      cumulative+=item.delta;if(item.delta>0)profit+=item.delta;else if(item.delta<0)loss+=item.delta;
+      const cls=item.delta>0?'up':item.delta<0?'down':'';
+      const deltaText=(item.delta>0?'+':item.delta<0?'−':'')+nf2.format(Math.abs(item.delta));
+      const cumText=(cumulative>0?'+':cumulative<0?'−':'')+nf2.format(Math.abs(cumulative));
+      const signalClass=item.name==='SELL'?'signal-sell':item.name==='TAKE_PROFIT'?'signal-buy':'signal-wait';
+      return `<tr><td>${new Date(item.time*1000).toLocaleString('th-TH')}</td><td class="log-signal ${signalClass}">${item.name}</td><td>${nf2.format(item.price)}</td><td class="${cls}">${deltaText}</td><td class="${cumulative>=0?'up':'down'}">${cumText}</td><td style="text-align:left;white-space:normal;min-width:220px">${escapeHtml(item.reason||'')}</td></tr>`;
+    });
+    body.innerHTML=rows.reverse().join('');
+    const net=signalLog.reduce((s,x)=>s+x.delta,0);
+    $('logNetPnl').textContent=(net>0?'+':net<0?'−':'')+nf2.format(Math.abs(net))+' บาท';
+    $('logNetPnl').className='v '+(net>=0?'up':'down');
+    $('logProfit').textContent=nf2.format(profit)+' บาท';
+    $('logLoss').textContent=nf2.format(Math.abs(loss))+' บาท';
+  }
+  function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function recordSignal(name,reason){
+    const last=candles.length?candles.filter(c=>c.closed).slice(-1)[0]:null;
+    const candleTime=last?last.time:Math.floor(nowSec()/60)*60;
+    const key=`${name}|${candleTime}`;
+    if(key===lastLogKey)return;
+    const currentPrice=spot&&fxEff()?calc(spot,fxEff()):null;
+    if(!Number.isFinite(currentPrice))return;
+    lastLogKey=key;
+    const previous=signalLog.length?signalLog[signalLog.length-1].price:(cost>0?cost:currentPrice);
+    const delta=currentPrice-previous;
+    signalLog.push({time:nowSec(),candleTime,name,price:currentPrice,delta,reason:String(reason||'')});
+    signalLog=signalLog.slice(-1000);
+    save(KEY.signalLog,signalLog);renderSignalLog();
+  }
   function setSignal(name,reason){
     const el=$('signalName');el.textContent=name;el.className='signal-name '+(name==='SELL'?'signal-sell':name==='TAKE_PROFIT'?'signal-buy':'signal-wait');
     $('signalReason').textContent=reason;
+    recordSignal(name,reason);
   }
-
   function render(price){
     const fx=fxEff();$('kvSpot').textContent=spot?nf2.format(spot):'—';$('kvFx').textContent=fx?nf2.format(fx):'—';
     $('kvFxNote').textContent=fxManual>0?'กำหนดเอง':(fxSource?'อัตโนมัติ · '+fxSource:'');
@@ -369,7 +423,6 @@
     }
     $('formula').innerHTML=`(Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035<br>(${nf2.format(spot)} × ${nf2.format(fx)} × 15.244 × 0.965) ÷ 31.1035 = <b style="font-size:16px">${nf2.format(price)}</b>`;
   }
-
   async function step(){
     try{
       if(!fxAuto||Date.now()-lastFxAt>FX_EVERY_MS){try{const r=await fetchFx();fxAuto=r.v;fxSource=r.name;lastFxAt=Date.now()}catch(e){if(!fxEff())throw e}}
@@ -385,7 +438,6 @@
       render(price);evaluate();setStatus('ok','อัปเดตล่าสุด '+new Date().toLocaleTimeString('th-TH'));
     }catch(e){setStatus('err','เชื่อมต่อข้อมูลไม่ได้ — จะลองใหม่ใน 5 วินาที');console.warn(e);evaluate()}
   }
-
   const num=v=>{const n=parseFloat(v);return Number.isFinite(n)&&n>0?n:null};
   const rerender=()=>{const fx=fxEff();render(spot&&fx?calc(spot,fx):null)};
   $('fxManual').addEventListener('input',e=>{fxManual=num(e.target.value);save(KEY.fx,fxManual);rerender()});
@@ -406,7 +458,19 @@
     const csv=rows.map(r=>r.join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='xauusd_synthetic_candles.csv';a.click();URL.revokeObjectURL(url);
   });
-  window.addEventListener('pagehide',()=>{save(KEY.hist,hist);save(KEY.candles,candles)});
+  $('clearSignalLog').addEventListener('click',()=>{
+    if(!confirm('ล้างประวัติ Signal Log ทั้งหมดหรือไม่?'))return;
+    signalLog=[];lastLogKey='';save(KEY.signalLog,signalLog);renderSignalLog();
+  });
+  $('exportSignalLog').addEventListener('click',()=>{
+    const header=['time_iso','signal','price_thb','pnl_change_thb','reason'];
+    const rows=signalLog.map(x=>[new Date(x.time*1000).toISOString(),x.name,x.price,x.delta,x.reason]);
+    const csv=[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='gold_signal_history.csv';a.click();URL.revokeObjectURL(url);
+  });
+  renderSignalLog();
+  window.addEventListener('pagehide',()=>{save(KEY.hist,hist);save(KEY.candles,candles);save(KEY.signalLog,signalLog)});
   evaluate();step();setInterval(step,POLL_MS);
 })();
 </script>
