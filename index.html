@@ -60,7 +60,7 @@
     .rule h3{font-size:13px;margin:0 0 7px}
     .rule p{font-size:12px;color:var(--mute);line-height:1.65;margin:0}
     .rule.sell h3{color:var(--down)}
-    .rule.buy h3{color:var(--up)}
+    .rule.buy h3{color:var(--down)}
     .rule.wait h3{color:var(--gold)}
     .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     .pill{border-radius:7px;padding:5px 8px;font-size:11px;background:#252b43;color:var(--mute)}
@@ -80,6 +80,16 @@
     .log-summary .kv .v{font-size:21px}
     .log-empty{text-align:center!important;color:var(--mute);padding:22px!important}
     .log-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.76);display:none;align-items:center;justify-content:center;padding:18px;z-index:9999}
+    .modal-backdrop.show{display:flex}
+    .confirm-modal{width:min(480px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 18px 70px rgba(0,0,0,.55)}
+    .confirm-modal h2{font-size:19px;margin:0 0 10px}
+    .confirm-modal p{font-size:13px;line-height:1.7;color:var(--mute);margin:7px 0}
+    .confirm-action{font-size:25px;font-weight:800;margin:12px 0}
+    .confirm-action.sell{color:var(--down)} .confirm-action.hold{color:var(--gold)}
+    .confirm-modal .btn{width:100%;padding:12px;font-size:14px;margin-top:12px}
+    .confirm-modal .btn.sell{background:var(--down);border-color:var(--down);color:white;font-weight:800}
+    .confirm-modal .btn.hold{background:var(--gold);border-color:var(--gold);color:#1a1200;font-weight:800}
 
   </style>
 </head>
@@ -115,19 +125,19 @@
       <div class="kv"><div class="k">Gold Spot (USD/oz)</div><div class="v" id="kvSpot">—</div><div class="n">แหล่งข้อมูล: gold-api.com</div></div>
       <div class="kv"><div class="k">USD/THB</div><div class="v" id="kvFx">—</div><div class="n" id="kvFxNote">กำลังโหลดอัตราแลกเปลี่ยน</div></div>
       <div class="kv"><div class="k">กำไร/ขาดทุนเทียบต้นทุน</div><div class="v" id="kvPnl">—</div><div class="n" id="kvPnlNote">ใส่ราคาที่ซื้อด้านล่าง</div></div>
-      <div class="kv"><div class="k">ข้อมูลแท่งเทียนสำหรับ BOT</div><div class="v" id="candleCount">0</div><div class="n" id="candleNote">สะสมข้อมูลทุก 1 นาที</div></div>
+      <div class="kv"><div class="k">ข้อมูลแท่งเทียนสำหรับระบบ</div><div class="v" id="candleCount">0</div><div class="n" id="candleNote">สะสมข้อมูลทุก 1 นาที</div></div>
     </div>
     <div class="formula" id="formula">สูตร: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035</div>
   </section>
   <section class="card">
     <div class="section-title">
-      <h2>🤖 AI + Indicators Decision Engine</h2>
+      <h2>🤖 ระบบวิเคราะห์และให้คำแนะนำ</h2>
       <span class="tag" id="engineStatus">กำลังรอข้อมูล</span>
     </div>
     <div class="signal-layout">
       <div class="signal-box">
         <div class="sub">สถานะล่าสุดของระบบ</div>
-        <div class="signal-name signal-wait" id="signalName">NO_TRADE</div>
+        <div class="signal-name signal-wait" id="signalName">รอข้อมูล</div>
         <div class="reason" id="signalReason">รอข้อมูลแท่งเทียนและ Indicators ให้เพียงพอก่อนตัดสินใจ</div>
         <div class="toolbar" style="margin-top:12px">
           <label style="min-width:130px">Timeframe สำหรับ BOT
@@ -137,7 +147,7 @@
               <option value="15">15 นาที</option>
             </select>
           </label>
-          <label style="min-width:130px">ATR buffer สำหรับหลุดแนวรับ
+          <label style="min-width:130px">ค่ากันชน ATR สำหรับหลุดแนวรับ
             <select id="bufferSelect">
               <option value="0.1">0.1 × ATR</option>
               <option value="0.2" selected>0.2 × ATR</option>
@@ -148,7 +158,7 @@
         <div class="warn" style="margin-top:8px">นี่คือระบบทดลองสัญญาณ ไม่ส่งคำสั่งซื้อขายจริง และไม่ใช่คำแนะนำการลงทุน</div>
       </div>
       <div class="signal-box">
-        <div class="section-title"><h2>Indicators</h2><span class="pill" id="trendPill">Trend: —</span></div>
+        <div class="section-title"><h2>Indicators</h2><span class="pill" id="trendPill">แนวโน้ม: —</span></div>
         <div class="indicator-grid">
           <div class="indicator"><div class="k">EMA 50</div><div class="v" id="ema50">—</div><div class="n" id="ema50Note">รอข้อมูล</div></div>
           <div class="indicator"><div class="k">EMA 200</div><div class="v" id="ema200">—</div><div class="n" id="ema200Note">รอข้อมูล</div></div>
@@ -161,47 +171,47 @@
         </div>
       </div>
     </div>
-    <div class="sub" style="margin-top:12px">กฎทดลอง: SELL = EMA50 &lt; EMA200 + ราคาปิดหลุดแนวรับตาม ATR + โมเมนตัมขาลง · TAKE_PROFIT = ปิดเหนือแนวต้านตาม ATR + RSI/MACD ฟื้นตัว (ขายทำกำไร) · เงื่อนไขไม่ครบให้ NO_TRADE</div>
+    <div class="sub" style="margin-top:12px">กฎทดลอง: ขายตัดขาดทุนเมื่อแนวโน้มขาลงและราคาปิดหลุดแนวรับพร้อมแรงขายยืนยัน · ขายทำกำไรเมื่อราคาปิดทะลุแนวต้านพร้อมโมเมนตัมฟื้นตัว · หากเงื่อนไขยังไม่ครบ ระบบแนะนำให้ถือต่อ</div>
   </section>
   <section class="card">
     <div class="section-title"><h2>เกณฑ์ตัดสินใจ</h2><span class="tag">Rules-based · เวอร์ชันทดสอบ</span></div>
     <div class="rules">
       <div class="rule sell">
-        <h3>🔻 SELL</h3>
+        <h3>🔻 ขายตัดขาดทุน</h3>
         <p>EMA 50 ต่ำกว่า EMA 200, ราคาปิดต่ำกว่าแนวรับอย่างน้อยตาม ATR buffer และ MACD อยู่ต่ำกว่า Signal พร้อมโมเมนตัมยืนยัน</p>
       </div>
       <div class="rule buy">
-        <h3>🟢 TAKE_PROFIT</h3>
-        <p>ราคาปิดเหนือแนวต้านตาม ATR buffer และ RSI มากกว่า 50 พร้อม MACD อยู่เหนือ Signal เป็นสัญญาณขายทำกำไรระยะสั้น</p>
+        <h3>🟢 ขายทำกำไร</h3>
+        <p>ราคาปิดเหนือแนวต้านตามค่ากันชน ATR และ RSI มากกว่า 50 พร้อม MACD อยู่เหนือเส้นสัญญาณ เป็นสัญญาณขายทำกำไรระยะสั้น</p>
       </div>
       <div class="rule wait">
-        <h3>⏸ NO_TRADE</h3>
-        <p>ข้อมูลไม่ครบ, สัญญาณขัดแย้ง, ราคาอยู่ในช่วงแนวรับ/แนวต้าน หรือยังไม่มีการยืนยันการทะลุระดับราคา</p>
+        <h3>⏸ ถือต่อ</h3>
+        <p>ข้อมูลยังไม่ครบ สัญญาณขัดแย้ง หรือราคายังไม่ยืนยันการหลุดแนวรับ/ทะลุแนวต้าน ให้ถือต่อและรอประเมินรอบถัดไป</p>
       </div>
     </div>
   </section>
   <section class="card" id="signalHistoryCard">
     <div class="section-title">
-      <h2>📋 SIGNAL HISTORY LOG</h2>
+      <h2>📋 ประวัติการตัดสินใจ</h2>
       <span class="tag" id="logCount">0 รายการ</span>
     </div>
-    <div class="sub">บันทึกเมื่อมีสัญญาณใหม่ในแท่งเวลาที่ปิดแล้ว · P/L ต่อเหตุการณ์คำนวณจากการเปลี่ยนแปลงของราคาอ้างอิงเทียบกับสัญญาณก่อนหน้า (รายการแรกเทียบต้นทุน)</div>
+    <div class="sub">บันทึกเฉพาะรายการที่ผู้ใช้กดยืนยันในหน้าต่างแจ้งเตือน · กำไร/ขาดทุนต่อรายการเทียบกับราคาที่กดยืนยันครั้งก่อน (รายการแรกเทียบต้นทุน)</div>
     <div class="log-wrap">
       <table class="log-table">
         <thead><tr><th>วัน / เวลา</th><th>สัญญาณ</th><th>ราคา (บาท)</th><th>เปลี่ยนแปลง P/L (บาท)</th><th>P/L สะสม (บาท)</th><th>เหตุผล</th></tr></thead>
-        <tbody id="signalLogBody"><tr><td colspan="6" class="log-empty">ยังไม่มีประวัติสัญญาณ</td></tr></tbody>
+        <tbody id="signalLogBody"><tr><td colspan="6" class="log-empty">ยังไม่มีรายการที่ยืนยัน</td></tr></tbody>
       </table>
     </div>
     <div class="log-summary">
-      <div class="kv"><div class="k">กำไร/ขาดทุนสุทธิสะสม</div><div class="v" id="logNetPnl">—</div><div class="n">รวมผลต่างจากทุกรายการใน Log</div></div>
-      <div class="kv"><div class="k">กำไรรวม</div><div class="v up" id="logProfit">0.00 บาท</div><div class="n">เฉพาะเหตุการณ์ที่เป็นบวก</div></div>
-      <div class="kv"><div class="k">ขาดทุนรวม</div><div class="v down" id="logLoss">0.00 บาท</div><div class="n">เฉพาะเหตุการณ์ที่เป็นลบ</div></div>
+      <div class="kv"><div class="k">กำไร/ขาดทุนสุทธิสะสม</div><div class="v" id="logNetPnl">—</div><div class="n">รวมผลต่างจากรายการที่ยืนยันแล้ว</div></div>
+      <div class="kv"><div class="k">กำไรรวม</div><div class="v up" id="logProfit">0.00 บาท</div><div class="n">เฉพาะรายการที่มีกำไร</div></div>
+      <div class="kv"><div class="k">ขาดทุนรวม</div><div class="v down" id="logLoss">0.00 บาท</div><div class="n">เฉพาะรายการที่ขาดทุน</div></div>
     </div>
     <div class="log-actions">
-      <button class="btn" id="exportSignalLog">ส่งออก Signal Log CSV</button>
-      <button class="btn" id="clearSignalLog">ล้างประวัติ Signal Log</button>
+      <button class="btn" id="exportSignalLog">ส่งออกประวัติเป็น CSV</button>
+      <button class="btn" id="clearSignalLog">ล้างประวัติการตัดสินใจ</button>
     </div>
-    <div class="foot" style="margin-top:9px">หมายเหตุ: เป็นผลต่างราคาอ้างอิงจำลองต่อทองคำ 1 บาท ไม่ใช่กำไร/ขาดทุนที่รับเงินจริง และยังไม่หักส่วนต่างราคารับซื้อ-ขายออก</div>
+    <div class="foot" style="margin-top:9px">หมายเหตุ: เป็นผลต่างราคาอ้างอิงต่อทองคำ 1 บาท ไม่ใช่กำไร/ขาดทุนที่รับเงินจริง และยังไม่หักส่วนต่างราคารับซื้อ-ขายออก</div>
   </section>
 
   <section class="card">
@@ -217,6 +227,16 @@
     <div class="foot" style="margin-top:12px">สูตรอ้างอิง: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035 · ราคานี้ไม่ใช่ราคาซื้อขายจริงของร้านทอง และไม่รวมส่วนต่างรับซื้อ/ขายออก</div>
   </section>
 </div>
+<div class="modal-backdrop" id="decisionModal" role="dialog" aria-modal="true" aria-labelledby="decisionTitle">
+  <div class="confirm-modal">
+    <h2 id="decisionTitle">ยืนยันการตัดสินใจ</h2>
+    <div class="sub">ระบบตรวจพบคำแนะนำใหม่ กรุณายืนยันก่อนบันทึกลงประวัติ</div>
+    <div class="confirm-action" id="decisionAction">—</div>
+    <p id="decisionReason">—</p>
+    <p id="decisionPrice">—</p>
+    <button class="btn" id="confirmDecision">ยืนยัน</button>
+  </div>
+</div>
 <script>
 (() => {
   'use strict';
@@ -224,7 +244,7 @@
   const calc=(spot,fx)=>spot*fx*GRAMS_PER_BAHT*PURITY/GRAMS_PER_OZ;
   const POLL_MS=5000, FX_EVERY_MS=60000, KEEP_SEC=24*3600, MAX_POINTS=6000;
   const $=id=>document.getElementById(id);
-  const KEY={hist:'gold_baht_hist_v2',fx:'gold_baht_fx_manual_v2',cost:'gold_baht_cost_v2',candles:'gold_spot_synthetic_candles_v1',signalLog:'gold_signal_history_v1'};
+  const KEY={hist:'gold_baht_hist_v2',fx:'gold_baht_fx_manual_v2',cost:'gold_baht_cost_v2',candles:'gold_spot_synthetic_candles_v1',signalLog:'gold_signal_history_confirmed_v1',session:'gold_trade_session_v1'};
   const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
   const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
   const nf0=new Intl.NumberFormat('th-TH',{maximumFractionDigits:0});
@@ -235,10 +255,14 @@
   let fxManual=load(KEY.fx,null),cost=load(KEY.cost,null);
   let hist=(load(KEY.hist,[])||[]).filter(p=>Array.isArray(p)&&isFinite(p[0])&&isFinite(p[1])&&p[0]>nowSec()-KEEP_SEC);
   let candles=(load(KEY.candles,[])||[]).filter(c=>c&&Number.isFinite(c.time)&&Number.isFinite(c.close)&&c.time>nowSec()-KEEP_SEC);
-  let signalLog=(load(KEY.signalLog,[])||[]).filter(x=>x&&x.name!=='NO_TRADE'&&Number.isFinite(x.time)&&Number.isFinite(x.price)&&Number.isFinite(x.delta));
-  // เก็บเฉพาะสัญญาณที่มีการดำเนินการ ไม่บันทึก NO_TRADE
-  {let previous=cost>0?cost:null;signalLog.forEach(item=>{item.delta=previous===null?0:item.price-previous;previous=item.price;});save(KEY.signalLog,signalLog);}
+  let signalLog=(load(KEY.signalLog,[])||[]).filter(x=>x&&Number.isFinite(x.time)&&Number.isFinite(x.price)&&Number.isFinite(x.delta));
+  // เริ่มติดตามเมื่อมีต้นทุนครั้งแรก; ประวัติชุดใหม่นี้เก็บเฉพาะรายการที่ผู้ใช้ยืนยัน
+  let session=load(KEY.session,null);
+  if(!session&&cost>0){session={active:true,sold:false,cost,lastPromptKey:''};save(KEY.session,session);}
+  if(session&&session.sold)session.active=false;
+  let pendingDecision=null;
   let lastLogKey='';
+  if(cost>0&&session&&session.active)$('cost').disabled=true;
   let tick=0, chart=null,series=null,costLine=null;
   if(fxManual)$('fxManual').value=fxManual;if(cost)$('cost').value=cost;
   const tzShift=-new Date().getTimezoneOffset()*60,disp=t=>t+tzShift;
@@ -320,14 +344,15 @@
     return tr.slice(-period).reduce((a,b)=>a+b,0)/period;
   }
   function evaluate(){
+    if(session&&session.sold){$('signalName').textContent='ปิดสถานะแล้ว';$('signalName').className='signal-name signal-sell';$('signalReason').textContent='คุณยืนยันขายแล้ว ระบบหยุดการแจ้งเตือนและไม่สร้างคำแนะนำเพิ่มเติม';$('engineStatus').textContent='สิ้นสุดการทำงาน';return;}
     const tf=Number($('tfSelect').value),cs=aggregateCandles(tf);
     $('candleCount').textContent=String(cs.length);
-    $('candleNote').textContent=`แท่งปิดแล้ว · Timeframe ${tf} นาที`;
+    $('candleNote').textContent=`แท่งปิดแล้ว · กรอบเวลา ${tf} นาที`;
     const closes=cs.map(c=>c.close),last=cs[cs.length-1];
     const e50=ema(closes,50),e200=ema(closes,200),rv=rsi(closes,14),mv=macd(closes),av=atr(cs,14);
     const fmt=v=>v==null||!Number.isFinite(v)?'—':nf2.format(v);
     $('ema50').textContent=fmt(e50);$('ema200').textContent=fmt(e200);$('rsi').textContent=fmt(rv);
-    $('macd').textContent=mv?fmt(mv.line):'—';$('macdNote').textContent=mv?`Signal ${fmt(mv.signal)} · ${mv.line<mv.signal?'ต่ำกว่า Signal':'สูงกว่า/เท่ากับ Signal'}`:'ข้อมูลไม่พอ';
+    $('macd').textContent=mv?fmt(mv.line):'—';$('macdNote').textContent=mv?`เส้นสัญญาณ ${fmt(mv.signal)} · ${mv.line<mv.signal?'ต่ำกว่าเส้นสัญญาณ':'สูงกว่าหรือเท่ากับเส้นสัญญาณ'}`:'ข้อมูลไม่พอ';
     $('atr').textContent=fmt(av);$('lastClose').textContent=last?fmt(last.close):'—';
     $('lastCandleTime').textContent=last?new Date(last.time*1000).toLocaleString('th-TH'):'ยังไม่มีแท่งที่ปิด';
     $('ema50Note').textContent=e50!==null?'คำนวณจากราคาปิด':'ต้องมีข้อมูลมากขึ้น';
@@ -335,10 +360,10 @@
     $('rsiNote').textContent=rv===null?'ข้อมูลไม่พอ':rv>70?'เขตแรงซื้อสูง':rv<30?'เขตแรงขายสูง':rv>50?'โมเมนตัมบวก':'โมเมนตัมลบ';
 
     const down=e50!==null&&e200!==null&&e50<e200,up=e50!==null&&e200!==null&&e50>e200;
-    $('trendPill').textContent='Trend: '+(down?'DOWN':up?'UP':'UNKNOWN');
+    $('trendPill').textContent='แนวโน้ม: '+(down?'ขาลง':up?'ขาขึ้น':'ยังไม่ชัด');
     $('trendPill').style.color=down?'#ef5350':up?'#26a69a':'#8b92b0';
     if(cs.length<205||!last||rv===null||!mv||av===null){
-      setSignal('NO_TRADE','ข้อมูลแท่งเทียนยังไม่เพียงพอสำหรับ EMA 200 และ Indicators ทั้งชุด');
+      setSignal('NO_TRADE','ข้อมูลแท่งเทียนยังไม่เพียงพอสำหรับการคำนวณตัวชี้วัดครบชุด',false);
       $('support').textContent='—';$('resistance').textContent='—';$('engineStatus').textContent='กำลังสะสมข้อมูล';
       return;
     }
@@ -349,19 +374,18 @@
     const upMomentum=mv.line>mv.signal&&rv>50;
     const breakDown=last.close<supportLevel-buffer;
     const breakUp=last.close>resistanceLevel+buffer;
-    // เงื่อนไขการตัดสินใจ (เปลี่ยน BUY_BACK เป็น TAKE_PROFIT)
+    // ประเมินคำแนะนำ: ขายตัดขาดทุน / ขายทำกำไร / ถือต่อ
     if(down&&breakDown&&downMomentum){
-      setSignal('SELL',`ผ่านครบ: EMA50 < EMA200 · ปิดต่ำกว่าแนวรับ (${fmt(supportLevel)}) เกิน buffer · MACD/RSI สนับสนุนแรงขาย`);
+      setSignal('SELL',`แนวโน้มขาลง: EMA 50 ต่ำกว่า EMA 200 · ราคาปิดหลุดแนวรับ (${fmt(supportLevel)}) เกินค่ากันชน · MACD และ RSI ยืนยันแรงขาย`);
     }else if(up){
-      // ถ้าระบบตรวจพบ Trend เป็นขาขึ้น (UP) ให้บังคับเป็น NO_TRADE เสมอจนกว่าจะเจอเงื่อนไข SELL
-      setSignal('NO_TRADE', `Trend เป็นขาขึ้น (UP) · ระงับสัญญาณซื้อ/รอต่อจนกว่าจะเกิดเงื่อนไข SELL`);
+      setSignal('NO_TRADE', 'แนวโน้มเป็นขาขึ้น แต่ยังไม่ครบเงื่อนไขขาย ระบบแนะนำให้ถือต่อ');
     }else if(breakUp&&upMomentum){
-      setSignal('TAKE_PROFIT',`ผ่านครบ: ปิดเหนือแนวต้าน (${fmt(resistanceLevel)}) เกิน buffer · MACD/RSI ฟื้นตัว (สัญญาณขายทำกำไร)`);
+      setSignal('TAKE_PROFIT',`ราคาปิดทะลุแนวต้าน (${fmt(resistanceLevel)}) เกินค่ากันชน · MACD และ RSI ฟื้นตัว เป็นจังหวะขายทำกำไร`);
     }else{
       const why=[];
       if(!down&&!up)why.push('แนวโน้มหลักยังไม่ชัด');
       if(!breakDown&&!breakUp)why.push('ยังไม่ยืนยันการหลุดแนวรับ/ทะลุแนวต้าน');
-      if(!downMomentum&&!upMomentum)why.push('Momentum ยังไม่ยืนยัน');
+      if(!downMomentum&&!upMomentum)why.push('โมเมนตัมยังไม่ยืนยัน');
       setSignal('NO_TRADE',why.join(' · ')||'สัญญาณยังไม่ผ่านเกณฑ์ครบ');
     }
     $('engineStatus').textContent='ประเมินจากแท่งที่ปิดแล้ว';
@@ -369,43 +393,63 @@
   function renderSignalLog(){
     const body=$('signalLogBody');
     $('logCount').textContent=signalLog.length+' รายการ';
-    if(!signalLog.length){body.innerHTML='<tr><td colspan="6" class="log-empty">ยังไม่มีประวัติสัญญาณ</td></tr>';$('logNetPnl').textContent='—';$('logProfit').textContent='0.00 บาท';$('logLoss').textContent='0.00 บาท';return;}
+    if(!signalLog.length){body.innerHTML='<tr><td colspan="6" class="log-empty">ยังไม่มีรายการที่ยืนยัน</td></tr>';$('logNetPnl').textContent='—';$('logProfit').textContent='0.00 บาท';$('logLoss').textContent='0.00 บาท';return;}
     let cumulative=0,profit=0,loss=0;
     const rows=signalLog.map(item=>{
       cumulative+=item.delta;if(item.delta>0)profit+=item.delta;else if(item.delta<0)loss+=item.delta;
       const cls=item.delta>0?'up':item.delta<0?'down':'';
       const deltaText=(item.delta>0?'+':item.delta<0?'−':'')+nf2.format(Math.abs(item.delta));
       const cumText=(cumulative>0?'+':cumulative<0?'−':'')+nf2.format(Math.abs(cumulative));
-      const signalClass=item.name==='SELL'?'signal-sell':item.name==='TAKE_PROFIT'?'signal-buy':'signal-wait';
-      return `<tr><td>${new Date(item.time*1000).toLocaleString('th-TH')}</td><td class="log-signal ${signalClass}">${item.name}</td><td>${nf2.format(item.price)}</td><td class="${cls}">${deltaText}</td><td class="${cumulative>=0?'up':'down'}">${cumText}</td><td style="text-align:left;white-space:normal;min-width:220px">${escapeHtml(item.reason||'')}</td></tr>`;
+      const actionClass=item.action==='ขาย'?'signal-sell':'signal-wait';
+      return `<tr><td>${new Date(item.time*1000).toLocaleString('th-TH')}</td><td class="log-signal ${actionClass}">${escapeHtml(item.actionLabel||item.action)}</td><td>${nf2.format(item.price)}</td><td class="${cls}">${deltaText}</td><td class="${cumulative>=0?'up':'down'}">${cumText}</td><td style="text-align:left;white-space:normal;min-width:220px">${escapeHtml(item.reason||'')}</td></tr>`;
     });
     body.innerHTML=rows.reverse().join('');
-    const net=signalLog.reduce((s,x)=>s+x.delta,0);
+    const net=signalLog.reduce((sum,item)=>sum+item.delta,0);
     $('logNetPnl').textContent=(net>0?'+':net<0?'−':'')+nf2.format(Math.abs(net))+' บาท';
     $('logNetPnl').className='v '+(net>=0?'up':'down');
     $('logProfit').textContent=nf2.format(profit)+' บาท';
     $('logLoss').textContent=nf2.format(Math.abs(loss))+' บาท';
   }
   function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-  function recordSignal(name,reason){
-    if(name==='NO_TRADE')return; // ไม่แสดงและไม่คำนวณ P/L สำหรับ NO_TRADE
+  function showDecision(name,reason){
+    if(!session||!session.active||session.sold||!cost||pendingDecision)return;
     const last=candles.length?candles.filter(c=>c.closed).slice(-1)[0]:null;
     const candleTime=last?last.time:Math.floor(nowSec()/60)*60;
-    const key=`${name}|${candleTime}`;
-    if(key===lastLogKey)return;
+    const action=name==='SELL'||name==='TAKE_PROFIT'?'ขาย':'ถือต่อ';
+    const key=`${action}|${candleTime}`;
+    if(session.lastPromptKey===key)return;
     const currentPrice=spot&&fxEff()?calc(spot,fxEff()):null;
     if(!Number.isFinite(currentPrice))return;
-    lastLogKey=key;
-    const previous=signalLog.length?signalLog[signalLog.length-1].price:(cost>0?cost:currentPrice);
-    const delta=currentPrice-previous;
-    signalLog.push({time:nowSec(),candleTime,name,price:currentPrice,delta,reason:String(reason||'')});
-    signalLog=signalLog.slice(-1000);
-    save(KEY.signalLog,signalLog);renderSignalLog();
+    const actionLabel=name==='SELL'?'ขายตัดขาดทุน':name==='TAKE_PROFIT'?'ขายทำกำไร':'ถือต่อ';
+    pendingDecision={action,actionLabel,name,reason,candleTime,key,price:currentPrice,time:nowSec()};
+    $('decisionAction').textContent=actionLabel;
+    $('decisionAction').className='confirm-action '+(action==='ขาย'?'sell':'hold');
+    $('decisionReason').textContent=reason||'';
+    const diff=currentPrice-cost;
+    $('decisionPrice').textContent=`ราคาปัจจุบันอ้างอิง ${nf2.format(currentPrice)} บาท · เทียบต้นทุน ${diff>=0?'+':'−'}${nf2.format(Math.abs(diff))} บาท`;
+    const button=$('confirmDecision');
+    button.textContent=action==='ขาย'?'ยืนยันขายและสิ้นสุดระบบ':'ยืนยันถือต่อ';
+    button.className='btn '+(action==='ขาย'?'sell':'hold');
+    $('decisionModal').classList.add('show');
   }
-  function setSignal(name,reason){
-    const el=$('signalName');el.textContent=name;el.className='signal-name '+(name==='SELL'?'signal-sell':name==='TAKE_PROFIT'?'signal-buy':'signal-wait');
+  function confirmDecision(){
+    if(!pendingDecision||!session||!session.active)return;
+    const item=pendingDecision;
+    const previous=signalLog.length?signalLog[signalLog.length-1].price:cost;
+    const delta=item.price-previous;
+    signalLog.push({time:item.time,candleTime:item.candleTime,action:item.action,actionLabel:item.actionLabel,price:item.price,delta,reason:item.reason});
+    signalLog=signalLog.slice(-1000);
+    session.lastPromptKey=item.key;
+    if(item.action==='ขาย'){session.sold=true;session.active=false;}
+    save(KEY.signalLog,signalLog);save(KEY.session,session);renderSignalLog();
+    pendingDecision=null;$('decisionModal').classList.remove('show');
+    if(session.sold){$('signalName').textContent='ปิดสถานะแล้ว';$('signalName').className='signal-name signal-sell';$('signalReason').textContent='ยืนยันขายแล้ว ระบบหยุดการแจ้งเตือนและสิ้นสุดการทำงาน';$('engineStatus').textContent='สิ้นสุดการทำงาน';}
+  }
+  function setSignal(name,reason,notify=true){
+    const labels={SELL:'ขายตัดขาดทุน',TAKE_PROFIT:'ขายทำกำไร',NO_TRADE:'ถือต่อ'};
+    const el=$('signalName');el.textContent=labels[name]||'รอข้อมูล';el.className='signal-name '+(name==='SELL'||name==='TAKE_PROFIT'?'signal-sell':'signal-wait');
     $('signalReason').textContent=reason;
-    recordSignal(name,reason);
+    if(notify)showDecision(name,reason);
   }
   function render(price){
     const fx=fxEff();$('kvSpot').textContent=spot?nf2.format(spot):'—';$('kvFx').textContent=fx?nf2.format(fx):'—';
@@ -444,7 +488,13 @@
   const num=v=>{const n=parseFloat(v);return Number.isFinite(n)&&n>0?n:null};
   const rerender=()=>{const fx=fxEff();render(spot&&fx?calc(spot,fx):null)};
   $('fxManual').addEventListener('input',e=>{fxManual=num(e.target.value);save(KEY.fx,fxManual);rerender()});
-  $('cost').addEventListener('input',e=>{cost=num(e.target.value);save(KEY.cost,cost);updateCostLine();rerender()});
+  $('cost').addEventListener('change',e=>{
+    if(session&&session.active){e.target.value=cost||'';return;}
+    const entered=num(e.target.value);if(!entered){cost=null;save(KEY.cost,cost);updateCostLine();rerender();return;}
+    cost=entered;save(KEY.cost,cost);updateCostLine();
+    session={active:true,sold:false,cost,lastPromptKey:''};save(KEY.session,session);$('cost').disabled=true;
+    $('engineStatus').textContent='เริ่มติดตามสถานะจากต้นทุนแล้ว';rerender();evaluate();
+  });
   $('range').addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b||!chart)return;
     document.querySelectorAll('#range button').forEach(x=>x.classList.toggle('on',x===b));
@@ -461,16 +511,17 @@
     const csv=rows.map(r=>r.join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='xauusd_synthetic_candles.csv';a.click();URL.revokeObjectURL(url);
   });
+  $('confirmDecision').addEventListener('click',confirmDecision);
   $('clearSignalLog').addEventListener('click',()=>{
-    if(!confirm('ล้างประวัติ Signal Log ทั้งหมดหรือไม่?'))return;
+    if(!confirm('ล้างประวัติการตัดสินใจที่ยืนยันแล้วทั้งหมดหรือไม่?'))return;
     signalLog=[];lastLogKey='';save(KEY.signalLog,signalLog);renderSignalLog();
   });
   $('exportSignalLog').addEventListener('click',()=>{
-    const header=['time_iso','signal','price_thb','pnl_change_thb','reason'];
-    const rows=signalLog.map(x=>[new Date(x.time*1000).toISOString(),x.name,x.price,x.delta,x.reason]);
+    const header=['วันเวลา','การตัดสินใจ','ราคาอ้างอิง_บาท','กำไรขาดทุนเปลี่ยนแปลง_บาท','เหตุผล'];
+    const rows=signalLog.map(x=>[new Date(x.time*1000).toLocaleString('th-TH'),x.actionLabel||x.action,x.price,x.delta,x.reason]);
     const csv=[header,...rows].map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
     const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download='gold_signal_history.csv';a.click();URL.revokeObjectURL(url);
+    a.href=url;a.download='ประวัติการตัดสินใจทองคำ.csv';a.click();URL.revokeObjectURL(url);
   });
   renderSignalLog();
   window.addEventListener('pagehide',()=>{save(KEY.hist,hist);save(KEY.candles,candles);save(KEY.signalLog,signalLog)});
