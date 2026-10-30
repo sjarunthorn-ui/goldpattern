@@ -235,7 +235,9 @@
   let fxManual=load(KEY.fx,null),cost=load(KEY.cost,null);
   let hist=(load(KEY.hist,[])||[]).filter(p=>Array.isArray(p)&&isFinite(p[0])&&isFinite(p[1])&&p[0]>nowSec()-KEEP_SEC);
   let candles=(load(KEY.candles,[])||[]).filter(c=>c&&Number.isFinite(c.time)&&Number.isFinite(c.close)&&c.time>nowSec()-KEEP_SEC);
-  let signalLog=(load(KEY.signalLog,[])||[]).filter(x=>x&&Number.isFinite(x.time)&&Number.isFinite(x.price)&&Number.isFinite(x.delta));
+  let signalLog=(load(KEY.signalLog,[])||[]).filter(x=>x&&x.name!=='NO_TRADE'&&Number.isFinite(x.time)&&Number.isFinite(x.price)&&Number.isFinite(x.delta));
+  // เก็บเฉพาะสัญญาณที่มีการดำเนินการ ไม่บันทึก NO_TRADE
+  {let previous=cost>0?cost:null;signalLog.forEach(item=>{item.delta=previous===null?0:item.price-previous;previous=item.price;});save(KEY.signalLog,signalLog);}
   let lastLogKey='';
   let tick=0, chart=null,series=null,costLine=null;
   if(fxManual)$('fxManual').value=fxManual;if(cost)$('cost').value=cost;
@@ -386,6 +388,7 @@
   }
   function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function recordSignal(name,reason){
+    if(name==='NO_TRADE')return; // ไม่แสดงและไม่คำนวณ P/L สำหรับ NO_TRADE
     const last=candles.length?candles.filter(c=>c.closed).slice(-1)[0]:null;
     const candleTime=last?last.time:Math.floor(nowSec()/60)*60;
     const key=`${name}|${candleTime}`;
