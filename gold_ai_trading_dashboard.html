@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gold AI Trading Dashboard — Realtime</title>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root{--bg:#0f1220;--card:#171b2e;--inner:#12162a;--line:#2a3050;--text:#e8eaf3;--mute:#8b92b0;--gold:#f5a30a;--up:#26a69a;--down:#ef5350;--blue:#69a7ff}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+    .wrap{max-width:1120px;margin:0 auto;display:grid;gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+    h1{font-size:19px;margin:0 0 3px;color:var(--gold)}
+    h2{font-size:16px;margin:0}
+    .sub{color:var(--mute);font-size:12px;line-height:1.6}
+    .head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .status{font-size:12px;color:var(--mute);display:flex;align-items:center;gap:6px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+    .dot.ok{background:var(--up);animation:pulse 1.6s infinite}
+    .dot.err{background:var(--down)}
+    @keyframes pulse{50%{opacity:.35}}
+    .price-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:12px 0}
+    .price{font-size:clamp(32px,5vw,48px);font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.1}
+    .unit{color:var(--mute);font-size:13px}
+    .chg{font-size:14px}
+    .up{color:var(--up)}
+    .down{color:var(--down)}
+    .toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+    .toolbar button,.btn{background:var(--inner);color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer}
+    .toolbar button.on{color:#1a1200;background:var(--gold);border-color:var(--gold)}
+    #chart{height:300px;width:100%}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+    .kv{background:var(--inner);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0}
+    .k{font-size:12px;color:var(--mute)}
+    .v{font-size:20px;font-variant-numeric:tabular-nums;margin-top:3px;overflow-wrap:anywhere}
+    .n{font-size:11px;color:var(--mute);margin-top:3px;line-height:1.5}
+    .formula{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--mute);margin-top:12px;word-break:break-word;line-height:1.7}
+    .formula b{color:var(--gold)}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+    label{font-size:12px;color:var(--mute);display:grid;gap:5px}
+    input,select{background:var(--inner);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px;width:100%;min-width:150px}
+    input:focus,select:focus{outline:1px solid var(--gold)}
+    .control-field{flex:1;min-width:180px}
+    .foot{font-size:11px;color:var(--mute);line-height:1.7}
+    .signal-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
+    .signal-box{border:1px solid var(--line);background:var(--inner);border-radius:12px;padding:14px}
+    .signal-name{font-size:25px;font-weight:800;letter-spacing:.4px}
+    .signal-sell{color:var(--down)}
+    .signal-buy{color:var(--up)}
+    .signal-wait{color:var(--gold)}
+    .tag{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);padding:4px 8px;border-radius:999px;font-size:11px;color:var(--mute)}
+    .indicator-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .indicator{background:#0f1325;border-radius:9px;padding:10px}
+    .indicator .k{font-size:11px}
+    .indicator .v{font-size:17px}
+    .reason{font-size:12px;color:var(--mute);line-height:1.7;margin-top:8px}
+    .rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .rule{background:var(--inner);border:1px solid var(--line);border-radius:10px;padding:12px}
+    .rule h3{font-size:13px;margin:0 0 7px}
+    .rule p{font-size:12px;color:var(--mute);line-height:1.65;margin:0}
+    .rule.sell h3{color:var(--down)}
+    .rule.buy h3{color:var(--up)}
+    .rule.wait h3{color:var(--gold)}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .pill{border-radius:7px;padding:5px 8px;font-size:11px;background:#252b43;color:var(--mute)}
+    .warn{border:1px solid #6d5424;background:#282116;color:#f3d39a;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.65}
+    .btn.primary{background:var(--gold);color:#1a1200;border-color:var(--gold);font-weight:700}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    @media(max-width:720px){body{padding:9px}.card{padding:12px}.signal-layout{grid-template-columns:1fr}.rules{grid-template-columns:1fr}.indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#chart{height:260px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card">
+    <div class="head">
+      <div>
+        <h1>📈 ราคาทองคำแท่ง 96.5% (บาทละ) — Realtime</h1>
+        <div class="sub">คำนวณจาก Gold Spot และ USD/THB · พร้อมแผง AI + Indicators Decision Engine</div>
+      </div>
+      <div class="status"><span class="dot" id="dot"></span><span id="statusText">กำลังเชื่อมต่อข้อมูล…</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="sub">ราคาอ้างอิงทองคำแท่ง 1 บาท</div>
+    <div class="price-row">
+      <div class="price" id="price">—</div>
+      <div class="unit">บาท / 1 บาททองคำ</div>
+      <div class="chg" id="chg">รอข้อมูล</div>
+    </div>
+    <div class="toolbar" id="range">
+      <button data-s="900">15 นาที</button>
+      <button data-s="3600">1 ชม.</button>
+      <button data-s="21600">6 ชม.</button>
+      <button data-s="0" class="on">ทั้งหมด</button>
+    </div>
+    <div id="chart"></div>
+    <div class="sub" style="margin-top:7px">กราฟนี้แสดงราคาอ้างอิงทองคำไทยที่คำนวณได้ ไม่ใช่ราคาประกาศซื้อขายจริงของร้านทอง</div>
+  </section>
+
+  <section class="card">
+    <div class="grid">
+      <div class="kv"><div class="k">Gold Spot (USD/oz)</div><div class="v" id="kvSpot">—</div><div class="n">แหล่งข้อมูล: gold-api.com</div></div>
+      <div class="kv"><div class="k">USD/THB</div><div class="v" id="kvFx">—</div><div class="n" id="kvFxNote">กำลังโหลดอัตราแลกเปลี่ยน</div></div>
+      <div class="kv"><div class="k">กำไร/ขาดทุนเทียบต้นทุน</div><div class="v" id="kvPnl">—</div><div class="n" id="kvPnlNote">ใส่ราคาที่ซื้อด้านล่าง</div></div>
+      <div class="kv"><div class="k">ข้อมูลแท่งเทียนสำหรับ BOT</div><div class="v" id="candleCount">0</div><div class="n" id="candleNote">สะสมข้อมูลทุก 1 นาที</div></div>
+    </div>
+    <div class="formula" id="formula">สูตร: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035</div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <h2>🤖 AI + Indicators Decision Engine</h2>
+      <span class="tag" id="engineStatus">กำลังรอข้อมูล</span>
+    </div>
+    <div class="signal-layout">
+      <div class="signal-box">
+        <div class="sub">สถานะล่าสุดของระบบ</div>
+        <div class="signal-name signal-wait" id="signalName">NO_TRADE</div>
+        <div class="reason" id="signalReason">รอข้อมูลแท่งเทียนและ Indicators ให้เพียงพอก่อนตัดสินใจ</div>
+        <div class="toolbar" style="margin-top:12px">
+          <label style="min-width:130px">Timeframe สำหรับ BOT
+            <select id="tfSelect">
+              <option value="1">1 นาที (สะสมเร็ว)</option>
+              <option value="5" selected>5 นาที</option>
+              <option value="15">15 นาที</option>
+            </select>
+          </label>
+          <label style="min-width:130px">ATR buffer สำหรับหลุดแนวรับ
+            <select id="bufferSelect">
+              <option value="0.1">0.1 × ATR</option>
+              <option value="0.2" selected>0.2 × ATR</option>
+              <option value="0.3">0.3 × ATR</option>
+            </select>
+          </label>
+        </div>
+        <div class="warn" style="margin-top:8px">นี่คือระบบทดลองสัญญาณ ไม่ส่งคำสั่งซื้อขายจริง และไม่ใช่คำแนะนำการลงทุน</div>
+      </div>
+      <div class="signal-box">
+        <div class="section-title"><h2>Indicators</h2><span class="pill" id="trendPill">Trend: —</span></div>
+        <div class="indicator-grid">
+          <div class="indicator"><div class="k">EMA 50</div><div class="v" id="ema50">—</div><div class="n" id="ema50Note">รอข้อมูล</div></div>
+          <div class="indicator"><div class="k">EMA 200</div><div class="v" id="ema200">—</div><div class="n" id="ema200Note">รอข้อมูล</div></div>
+          <div class="indicator"><div class="k">RSI 14</div><div class="v" id="rsi">—</div><div class="n" id="rsiNote">รอข้อมูล</div></div>
+          <div class="indicator"><div class="k">MACD / Signal</div><div class="v" id="macd">—</div><div class="n" id="macdNote">รอข้อมูล</div></div>
+          <div class="indicator"><div class="k">แนวรับ</div><div class="v" id="support">—</div><div class="n">ต่ำสุดจากช่วงก่อนหน้า</div></div>
+          <div class="indicator"><div class="k">แนวต้าน</div><div class="v" id="resistance">—</div><div class="n">สูงสุดจากช่วงก่อนหน้า</div></div>
+          <div class="indicator"><div class="k">ATR 14</div><div class="v" id="atr">—</div><div class="n">ประมาณความผันผวน</div></div>
+          <div class="indicator"><div class="k">ราคาปิดแท่งล่าสุด</div><div class="v" id="lastClose">—</div><div class="n" id="lastCandleTime">ยังไม่มีแท่งที่ปิด</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sub" style="margin-top:12px">กฎทดลอง: SELL = EMA50 &lt; EMA200 + ราคาปิดหลุดแนวรับตาม ATR + โมเมนตัมขาลง · TAKE_PROFIT = ปิดเหนือแนวต้านตาม ATR + RSI/MACD ฟื้นตัว (ขายทำกำไร) · เงื่อนไขไม่ครบให้ NO_TRADE</div>
+  </section>
+
+  <section class="card">
+    <div class="section-title"><h2>เกณฑ์ตัดสินใจ</h2><span class="tag">Rules-based · เวอร์ชันทดสอบ</span></div>
+    <div class="rules">
+      <div class="rule sell">
+        <h3>🔻 SELL</h3>
+        <p>EMA 50 ต่ำกว่า EMA 200, ราคาปิดต่ำกว่าแนวรับอย่างน้อยตาม ATR buffer และ MACD อยู่ต่ำกว่า Signal พร้อมโมเมนตัมยืนยัน</p>
+      </div>
+      <div class="rule buy">
+        <h3>🟢 TAKE_PROFIT</h3>
+        <p>ราคาปิดเหนือแนวต้านตาม ATR buffer และ RSI มากกว่า 50 พร้อม MACD อยู่เหนือ Signal เป็นสัญญาณขายทำกำไรระยะสั้น</p>
+      </div>
+      <div class="rule wait">
+        <h3>⏸ NO_TRADE</h3>
+        <p>ข้อมูลไม่ครบ, สัญญาณขัดแย้ง, ราคาอยู่ในช่วงแนวรับ/แนวต้าน หรือยังไม่มีการยืนยันการทะลุระดับราคา</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title"><h2>ตั้งค่าราคาและข้อมูล</h2></div>
+    <div class="controls">
+      <label class="control-field">USD/THB กำหนดเอง (เว้นว่าง = ดึงอัตโนมัติ)<input id="fxManual" type="number" step="0.01" min="0" placeholder="เช่น 33.50"></label>
+      <label class="control-field">ราคาที่ซื้อ (บาท/บาททองคำ)<input id="cost" type="number" step="0.01" min="0" placeholder="เช่น 64000.19"></label>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" id="resetCandles">ล้างประวัติแท่งเทียนในเครื่อง</button>
+      <button class="btn" id="exportCandles">ส่งออกข้อมูลแท่งเทียน CSV</button>
+    </div>
+    <div class="foot" style="margin-top:12px">สูตรอ้างอิง: (Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035 · ราคานี้ไม่ใช่ราคาซื้อขายจริงของร้านทอง และไม่รวมส่วนต่างรับซื้อ/ขายออก</div>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const GRAMS_PER_BAHT=15.244, PURITY=0.965, GRAMS_PER_OZ=31.1035;
+  const calc=(spot,fx)=>spot*fx*GRAMS_PER_BAHT*PURITY/GRAMS_PER_OZ;
+  const POLL_MS=5000, FX_EVERY_MS=60000, KEEP_SEC=24*3600, MAX_POINTS=6000;
+  const $=id=>document.getElementById(id);
+  const KEY={hist:'gold_baht_hist_v2',fx:'gold_baht_fx_manual_v2',cost:'gold_baht_cost_v2',candles:'gold_spot_synthetic_candles_v1'};
+  const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+  const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+  const nf0=new Intl.NumberFormat('th-TH',{maximumFractionDigits:0});
+  const nf2=new Intl.NumberFormat('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const sign=n=>n>0?'+':n<0?'−':'';
+  const nowSec=()=>Math.floor(Date.now()/1000);
+  let spot=null,fxAuto=null,fxSource='',lastFxAt=0;
+  let fxManual=load(KEY.fx,null),cost=load(KEY.cost,null);
+  let hist=(load(KEY.hist,[])||[]).filter(p=>Array.isArray(p)&&isFinite(p[0])&&isFinite(p[1])&&p[0]>nowSec()-KEEP_SEC);
+  let candles=(load(KEY.candles,[])||[]).filter(c=>c&&Number.isFinite(c.time)&&Number.isFinite(c.close)&&c.time>nowSec()-KEEP_SEC);
+  let tick=0, chart=null,series=null,costLine=null;
+  if(fxManual)$('fxManual').value=fxManual;if(cost)$('cost').value=cost;
+
+  const tzShift=-new Date().getTimezoneOffset()*60,disp=t=>t+tzShift;
+  if(window.LightweightCharts){
+    chart=LightweightCharts.createChart($('chart'),{
+      autoSize:true,layout:{background:{type:'solid',color:'transparent'},textColor:'#8b92b0'},
+      grid:{vertLines:{color:'#232844'},horzLines:{color:'#232844'}},
+      rightPriceScale:{borderColor:'#2a3050'},timeScale:{borderColor:'#2a3050',timeVisible:true,secondsVisible:false},
+      crosshair:{mode:0}
+    });
+    series=chart.addAreaSeries({lineColor:'#f5a30a',topColor:'rgba(245,163,10,.30)',bottomColor:'rgba(245,163,10,0)',lineWidth:2,priceFormat:{type:'price',precision:0,minMove:1}});
+    series.setData(hist.map(p=>({time:disp(p[0]),value:p[1]})));chart.timeScale().fitContent();
+  }else $('chart').innerHTML='<div class="sub" style="padding:40px 0;text-align:center">โหลดไลบรารีกราฟไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</div>';
+
+  function updateCostLine(){if(!series)return;if(costLine){series.removePriceLine(costLine);costLine=null}if(cost>0)costLine=series.createPriceLine({price:cost,color:'#26a69a',lineStyle:2,lineWidth:1,axisLabelVisible:true,title:'ต้นทุน'});}
+  updateCostLine();
+
+  async function getJSON(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(url+' '+r.status);return r.json();}
+  async function fetchSpot(){const j=await getJSON('https://api.gold-api.com/price/XAU');const p=Number(j.price);if(!Number.isFinite(p)||p<=0)throw new Error('spot invalid');return p;}
+  async function fetchFx(){
+    const sources=[['open.er-api.com',async()=>(await getJSON('https://open.er-api.com/v6/latest/USD')).rates.THB],['frankfurter.app',async()=>(await getJSON('https://api.frankfurter.app/latest?from=USD&to=THB')).rates.THB]];
+    for(const [name,fn] of sources){try{const v=Number(await fn());if(Number.isFinite(v)&&v>0)return{v,name}}catch(e){}}
+    throw new Error('fx unavailable');
+  }
+  const fxEff=()=>fxManual>0?fxManual:fxAuto;
+  function setStatus(kind,text){$('dot').className='dot '+kind;$('statusText').textContent=text;}
+
+  function addSpotToCandle(price,t){
+    const minute=Math.floor(t/60)*60;
+    const last=candles.length?candles[candles.length-1]:null;
+    if(!last||last.time<minute){
+      if(last) last.closed=true;
+      candles.push({time:minute,open:price,high:price,low:price,close:price,closed:false});
+    }else{
+      last.high=Math.max(last.high,price);last.low=Math.min(last.low,price);last.close=price;
+    }
+    candles=candles.filter(c=>c.time>nowSec()-KEEP_SEC).slice(-2000);
+    if(tick%6===0)save(KEY.candles,candles);
+  }
+
+  function aggregateCandles(minutes){
+    if(minutes===1)return candles.filter(c=>c.closed);
+    const closed=candles.filter(c=>c.closed),out=[];
+    for(const c of closed){
+      const bucket=Math.floor(c.time/(minutes*60))*(minutes*60);
+      let a=out[out.length-1];
+      if(!a||a.time!==bucket){a={time:bucket,open:c.open,high:c.high,low:c.low,close:c.close,closed:true};out.push(a)}
+      else{a.high=Math.max(a.high,c.high);a.low=Math.min(a.low,c.low);a.close=c.close}
+    }
+    return out;
+  }
+
+  function ema(values,period){
+    if(values.length<period)return null;
+    const k=2/(period+1);let v=values.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    for(let i=period;i<values.length;i++)v=values[i]*k+v*(1-k);
+    return v;
+  }
+
+  function rsi(values,period=14){
+    if(values.length<=period)return null;
+    let gain=0,loss=0;
+    for(let i=1;i<=period;i++){const d=values[i]-values[i-1];if(d>0)gain+=d;else loss-=d}
+    let avgG=gain/period,avgL=loss/period;
+    for(let i=period+1;i<values.length;i++){const d=values[i]-values[i-1];avgG=((avgG*(period-1))+Math.max(d,0))/period;avgL=((avgL*(period-1))+Math.max(-d,0))/period}
+    if(avgL===0)return 100;return 100-(100/(1+avgG/avgL));
+  }
+
+  function macd(values){
+    if(values.length<35)return null;
+    const fast=[],slow=[];
+    for(let i=0;i<values.length;i++){
+      fast.push(ema(values.slice(0,i+1),12));
+      slow.push(ema(values.slice(0,i+1),26));
+    }
+    const line=[];
+    for(let i=0;i<values.length;i++)if(fast[i]!==null&&slow[i]!==null)line.push(fast[i]-slow[i]);
+    if(line.length<9)return null;
+    const sig=ema(line,9);
+    return {line:line[line.length-1],signal:sig};
+  }
+
+  function atr(cs,period=14){
+    if(cs.length<period+1)return null;
+    const tr=[];
+    for(let i=1;i<cs.length;i++){const c=cs[i],prev=cs[i-1];tr.push(Math.max(c.high-c.low,Math.abs(c.high-prev.close),Math.abs(c.low-prev.close)))}
+    return tr.slice(-period).reduce((a,b)=>a+b,0)/period;
+  }
+
+  function evaluate(){
+    const tf=Number($('tfSelect').value),cs=aggregateCandles(tf);
+    $('candleCount').textContent=String(cs.length);
+    $('candleNote').textContent=`แท่งปิดแล้ว · Timeframe ${tf} นาที`;
+    const closes=cs.map(c=>c.close),last=cs[cs.length-1];
+    const e50=ema(closes,50),e200=ema(closes,200),rv=rsi(closes,14),mv=macd(closes),av=atr(cs,14);
+    const fmt=v=>v==null||!Number.isFinite(v)?'—':nf2.format(v);
+    $('ema50').textContent=fmt(e50);$('ema200').textContent=fmt(e200);$('rsi').textContent=fmt(rv);
+    $('macd').textContent=mv?fmt(mv.line):'—';$('macdNote').textContent=mv?`Signal ${fmt(mv.signal)} · ${mv.line<mv.signal?'ต่ำกว่า Signal':'สูงกว่า/เท่ากับ Signal'}`:'ข้อมูลไม่พอ';
+    $('atr').textContent=fmt(av);$('lastClose').textContent=last?fmt(last.close):'—';
+    $('lastCandleTime').textContent=last?new Date(last.time*1000).toLocaleString('th-TH'):'ยังไม่มีแท่งที่ปิด';
+    $('ema50Note').textContent=e50!==null?'คำนวณจากราคาปิด':'ต้องมีข้อมูลมากขึ้น';
+    $('ema200Note').textContent=e200!==null?'คำนวณจากราคาปิด':'ต้องมีอย่างน้อย 200 แท่ง';
+    $('rsiNote').textContent=rv===null?'ข้อมูลไม่พอ':rv>70?'เขตแรงซื้อสูง':rv<30?'เขตแรงขายสูง':rv>50?'โมเมนตัมบวก':'โมเมนตัมลบ';
+    
+    const down=e50!==null&&e200!==null&&e50<e200,up=e50!==null&&e200!==null&&e50>e200;
+    $('trendPill').textContent='Trend: '+(down?'DOWN':up?'UP':'UNKNOWN');
+    $('trendPill').style.color=down?'#ef5350':up?'#26a69a':'#8b92b0';
+
+    if(cs.length<205||!last||rv===null||!mv||av===null){
+      setSignal('NO_TRADE','ข้อมูลแท่งเทียนยังไม่เพียงพอสำหรับ EMA 200 และ Indicators ทั้งชุด');
+      $('support').textContent='—';$('resistance').textContent='—';$('engineStatus').textContent='กำลังสะสมข้อมูล';
+      return;
+    }
+
+    const prior=cs.slice(-21,-1),supportLevel=Math.min(...prior.map(c=>c.low)),resistanceLevel=Math.max(...prior.map(c=>c.high));
+    $('support').textContent=fmt(supportLevel);$('resistance').textContent=fmt(resistanceLevel);
+    const buffer=Number($('bufferSelect').value)*av;
+    const downMomentum=mv.line<mv.signal&&rv<50;
+    const upMomentum=mv.line>mv.signal&&rv>50;
+    const breakDown=last.close<supportLevel-buffer;
+    const breakUp=last.close>resistanceLevel+buffer;
+
+    // เงื่อนไขการตัดสินใจ (เปลี่ยน BUY_BACK เป็น TAKE_PROFIT)
+    if(down&&breakDown&&downMomentum){
+      setSignal('SELL',`ผ่านครบ: EMA50 < EMA200 · ปิดต่ำกว่าแนวรับ (${fmt(supportLevel)}) เกิน buffer · MACD/RSI สนับสนุนแรงขาย`);
+    }else if(up){
+      // ถ้าระบบตรวจพบ Trend เป็นขาขึ้น (UP) ให้บังคับเป็น NO_TRADE เสมอจนกว่าจะเจอเงื่อนไข SELL
+      setSignal('NO_TRADE', `Trend เป็นขาขึ้น (UP) · ระงับสัญญาณซื้อ/รอต่อจนกว่าจะเกิดเงื่อนไข SELL`);
+    }else if(breakUp&&upMomentum){
+      setSignal('TAKE_PROFIT',`ผ่านครบ: ปิดเหนือแนวต้าน (${fmt(resistanceLevel)}) เกิน buffer · MACD/RSI ฟื้นตัว (สัญญาณขายทำกำไร)`);
+    }else{
+      const why=[];
+      if(!down&&!up)why.push('แนวโน้มหลักยังไม่ชัด');
+      if(!breakDown&&!breakUp)why.push('ยังไม่ยืนยันการหลุดแนวรับ/ทะลุแนวต้าน');
+      if(!downMomentum&&!upMomentum)why.push('Momentum ยังไม่ยืนยัน');
+      setSignal('NO_TRADE',why.join(' · ')||'สัญญาณยังไม่ผ่านเกณฑ์ครบ');
+    }
+    $('engineStatus').textContent='ประเมินจากแท่งที่ปิดแล้ว';
+  }
+
+  function setSignal(name,reason){
+    const el=$('signalName');el.textContent=name;el.className='signal-name '+(name==='SELL'?'signal-sell':name==='TAKE_PROFIT'?'signal-buy':'signal-wait');
+    $('signalReason').textContent=reason;
+  }
+
+  function render(price){
+    const fx=fxEff();$('kvSpot').textContent=spot?nf2.format(spot):'—';$('kvFx').textContent=fx?nf2.format(fx):'—';
+    $('kvFxNote').textContent=fxManual>0?'กำหนดเอง':(fxSource?'อัตโนมัติ · '+fxSource:'');
+    if(price==null)return;
+    $('price').textContent=nf0.format(price);
+    if(hist.length>1){
+      const base=hist[0][1],d=price-base,el=$('chg');
+      el.textContent=`${sign(d)}${nf0.format(Math.abs(d))} (${sign(d)}${Math.abs(d/base*100).toFixed(2)}%) จากจุดแรกในกราฟ`;
+      el.className='chg '+(d>0?'up':d<0?'down':'');
+    }
+    if(cost>0){
+      const d=price-cost;
+      $('kvPnl').innerHTML=`<span class="${d>=0?'up':'down'}">${sign(d)}${nf0.format(Math.abs(d))} บาท</span>`;
+      $('kvPnlNote').textContent=`${sign(d)}${Math.abs(d/cost*100).toFixed(2)}% (ยังไม่หักส่วนต่างรับซื้อ-ขายออก)`;
+    }else{
+      $('kvPnl').textContent='—';$('kvPnlNote').textContent='ใส่ราคาที่ซื้อด้านล่าง';
+    }
+    $('formula').innerHTML=`(Gold Spot × USD/THB × 15.244 × 0.965) ÷ 31.1035<br>(${nf2.format(spot)} × ${nf2.format(fx)} × 15.244 × 0.965) ÷ 31.1035 = <b style="font-size:16px">${nf2.format(price)}</b>`;
+  }
+
+  async function step(){
+    try{
+      if(!fxAuto||Date.now()-lastFxAt>FX_EVERY_MS){try{const r=await fetchFx();fxAuto=r.v;fxSource=r.name;lastFxAt=Date.now()}catch(e){if(!fxEff())throw e}}
+      spot=await fetchSpot();const fx=fxEff();if(!fx)throw new Error('no fx');
+      const price=calc(spot,fx),t=nowSec();
+      if(!hist.length||t>=hist[hist.length-1][0]){
+        if(hist.length&&t===hist[hist.length-1][0])hist[hist.length-1][1]=price;else hist.push([t,price]);
+        if(series)series.update({time:disp(t),value:price});
+      }
+      hist=hist.filter(p=>p[0]>nowSec()-KEEP_SEC).slice(-MAX_POINTS);
+      addSpotToCandle(spot,t);
+      if(++tick%6===0){save(KEY.hist,hist);save(KEY.candles,candles)}
+      render(price);evaluate();setStatus('ok','อัปเดตล่าสุด '+new Date().toLocaleTimeString('th-TH'));
+    }catch(e){setStatus('err','เชื่อมต่อข้อมูลไม่ได้ — จะลองใหม่ใน 5 วินาที');console.warn(e);evaluate()}
+  }
+
+  const num=v=>{const n=parseFloat(v);return Number.isFinite(n)&&n>0?n:null};
+  const rerender=()=>{const fx=fxEff();render(spot&&fx?calc(spot,fx):null)};
+  $('fxManual').addEventListener('input',e=>{fxManual=num(e.target.value);save(KEY.fx,fxManual);rerender()});
+  $('cost').addEventListener('input',e=>{cost=num(e.target.value);save(KEY.cost,cost);updateCostLine();rerender()});
+  $('range').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b||!chart)return;
+    document.querySelectorAll('#range button').forEach(x=>x.classList.toggle('on',x===b));
+    const s=Number(b.dataset.s);if(!s){chart.timeScale().fitContent();return}
+    const to=disp(nowSec());chart.timeScale().setVisibleRange({from:to-s,to:to+30});
+  });
+  $('tfSelect').addEventListener('change',evaluate);$('bufferSelect').addEventListener('change',evaluate);
+  $('resetCandles').addEventListener('click',()=>{
+    if(!confirm('ลบประวัติแท่งเทียนสังเคราะห์ที่เก็บในเครื่องหรือไม่?'))return;
+    candles=[];save(KEY.candles,candles);evaluate();
+  });
+  $('exportCandles').addEventListener('click',()=>{
+    const rows=[['time_iso','open','high','low','close','closed'],...candles.map(c=>[new Date(c.time*1000).toISOString(),c.open,c.high,c.low,c.close,c.closed])];
+    const csv=rows.map(r=>r.join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='xauusd_synthetic_candles.csv';a.click();URL.revokeObjectURL(url);
+  });
+  window.addEventListener('pagehide',()=>{save(KEY.hist,hist);save(KEY.candles,candles)});
+  evaluate();step();setInterval(step,POLL_MS);
+})();
+</script>
+</body>
+</html>
